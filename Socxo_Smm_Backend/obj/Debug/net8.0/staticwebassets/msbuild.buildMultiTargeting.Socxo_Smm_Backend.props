@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\Socxo_Smm_Backend.props" />
+</Project>

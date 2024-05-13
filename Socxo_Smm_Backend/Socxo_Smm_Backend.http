@@ -1,0 +1,6 @@
+@Socxo_Smm_Backend_HostAddress = http://localhost:5286
+
+GET {{Socxo_Smm_Backend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

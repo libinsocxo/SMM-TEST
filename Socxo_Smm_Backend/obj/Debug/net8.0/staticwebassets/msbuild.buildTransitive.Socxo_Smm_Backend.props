@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\buildMultiTargeting\Socxo_Smm_Backend.props" />
+</Project>
