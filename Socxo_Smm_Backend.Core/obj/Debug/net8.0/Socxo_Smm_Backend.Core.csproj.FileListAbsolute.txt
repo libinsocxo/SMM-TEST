@@ -10,3 +10,16 @@ C:\Users\Libin Luvis\source\repos\Socxo_Smm_Backend.Core\obj\Debug\net8.0\Socxo_
 C:\Users\Libin Luvis\source\repos\Socxo_Smm_Backend.Core\obj\Debug\net8.0\refint\Socxo_Smm_Backend.Core.dll
 C:\Users\Libin Luvis\source\repos\Socxo_Smm_Backend.Core\obj\Debug\net8.0\Socxo_Smm_Backend.Core.pdb
 C:\Users\Libin Luvis\source\repos\Socxo_Smm_Backend.Core\obj\Debug\net8.0\ref\Socxo_Smm_Backend.Core.dll
+C:\Users\Libin Luvis\source\repos\socxo_smm\Socxo_Smm_Backend.Core\bin\Debug\net8.0\Socxo_Smm_Backend.Core.deps.json
+C:\Users\Libin Luvis\source\repos\socxo_smm\Socxo_Smm_Backend.Core\bin\Debug\net8.0\Socxo_Smm_Backend.Core.dll
+C:\Users\Libin Luvis\source\repos\socxo_smm\Socxo_Smm_Backend.Core\bin\Debug\net8.0\Socxo_Smm_Backend.Core.pdb
+C:\Users\Libin Luvis\source\repos\socxo_smm\Socxo_Smm_Backend.Core\obj\Debug\net8.0\Socxo_Smm_Backend.Core.csproj.AssemblyReference.cache
+C:\Users\Libin Luvis\source\repos\socxo_smm\Socxo_Smm_Backend.Core\obj\Debug\net8.0\Socxo_Smm_Backend.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Libin Luvis\source\repos\socxo_smm\Socxo_Smm_Backend.Core\obj\Debug\net8.0\Socxo_Smm_Backend.Core.AssemblyInfoInputs.cache
+C:\Users\Libin Luvis\source\repos\socxo_smm\Socxo_Smm_Backend.Core\obj\Debug\net8.0\Socxo_Smm_Backend.Core.AssemblyInfo.cs
+C:\Users\Libin Luvis\source\repos\socxo_smm\Socxo_Smm_Backend.Core\obj\Debug\net8.0\Socxo_Smm_Backend.Core.csproj.CoreCompileInputs.cache
+C:\Users\Libin Luvis\source\repos\socxo_smm\Socxo_Smm_Backend.Core\obj\Debug\net8.0\Socxo_Smm_Backend.Core.sourcelink.json
+C:\Users\Libin Luvis\source\repos\socxo_smm\Socxo_Smm_Backend.Core\obj\Debug\net8.0\Socxo_Smm_Backend.Core.dll
+C:\Users\Libin Luvis\source\repos\socxo_smm\Socxo_Smm_Backend.Core\obj\Debug\net8.0\refint\Socxo_Smm_Backend.Core.dll
+C:\Users\Libin Luvis\source\repos\socxo_smm\Socxo_Smm_Backend.Core\obj\Debug\net8.0\Socxo_Smm_Backend.Core.pdb
+C:\Users\Libin Luvis\source\repos\socxo_smm\Socxo_Smm_Backend.Core\obj\Debug\net8.0\ref\Socxo_Smm_Backend.Core.dll

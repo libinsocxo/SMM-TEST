@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "z15Y1SXy8BlE+q/9Fbw57u5Le2gf0POOECeMTl3FR2j8MjlbJoRgU8nQ53XA+MfGC8rkOE+hbFvVnP0BLw4DKg==",
+  "dgSpecHash": "zQT06XegCv6ot6aNVOJ8i/QVG0/sAIrRXB7OA0mP2aeBIZxa7/mYwXxJvTtXgUfaaZ5KcuCjhqdi8zY9XVYD8w==",
   "success": true,
-  "projectFilePath": "C:\\Users\\Libin Luvis\\source\\repos\\Socxo_Smm_Backend.Core\\Socxo_Smm_Backend.Core.csproj",
+  "projectFilePath": "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend.Core\\Socxo_Smm_Backend.Core.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Libin Luvis\\.nuget\\packages\\awssdk.core\\3.7.100.14\\awssdk.core.3.7.100.14.nupkg.sha512",
     "C:\\Users\\Libin Luvis\\.nuget\\packages\\awssdk.securitytoken\\3.7.100.14\\awssdk.securitytoken.3.7.100.14.nupkg.sha512",

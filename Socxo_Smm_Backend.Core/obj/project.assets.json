@@ -787,11 +787,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Libin Luvis\\source\\repos\\Socxo_Smm_Backend.Core\\Socxo_Smm_Backend.Core.csproj",
+      "projectUniqueName": "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend.Core\\Socxo_Smm_Backend.Core.csproj",
       "projectName": "Socxo_Smm_Backend.Core",
-      "projectPath": "C:\\Users\\Libin Luvis\\source\\repos\\Socxo_Smm_Backend.Core\\Socxo_Smm_Backend.Core.csproj",
+      "projectPath": "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend.Core\\Socxo_Smm_Backend.Core.csproj",
       "packagesPath": "C:\\Users\\Libin Luvis\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Libin Luvis\\source\\repos\\Socxo_Smm_Backend.Core\\obj\\",
+      "outputPath": "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend.Core\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Libin Luvis\\AppData\\Roaming\\NuGet\\NuGet.Config",

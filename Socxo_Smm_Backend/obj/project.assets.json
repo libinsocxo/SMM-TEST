@@ -7241,11 +7241,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Libin Luvis\\source\\repos\\Socxo_Smm_Backend\\Socxo_Smm_Backend.csproj",
+      "projectUniqueName": "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend\\Socxo_Smm_Backend.csproj",
       "projectName": "Socxo_Smm_Backend",
-      "projectPath": "C:\\Users\\Libin Luvis\\source\\repos\\Socxo_Smm_Backend\\Socxo_Smm_Backend.csproj",
+      "projectPath": "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend\\Socxo_Smm_Backend.csproj",
       "packagesPath": "C:\\Users\\Libin Luvis\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Libin Luvis\\source\\repos\\Socxo_Smm_Backend\\obj\\",
+      "outputPath": "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Libin Luvis\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -7262,8 +7262,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "C:\\Users\\Libin Luvis\\source\\repos\\Socxo_Smm_Backend.Infrastructure\\Socxo_Smm_Backend.Infrastructure.csproj": {
-              "projectPath": "C:\\Users\\Libin Luvis\\source\\repos\\Socxo_Smm_Backend.Infrastructure\\Socxo_Smm_Backend.Infrastructure.csproj"
+            "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend.Infrastructure\\Socxo_Smm_Backend.Infrastructure.csproj": {
+              "projectPath": "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend.Infrastructure\\Socxo_Smm_Backend.Infrastructure.csproj"
             }
           }
         }
