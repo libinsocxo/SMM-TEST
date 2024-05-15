@@ -166,9 +166,11 @@ namespace Socxo_Smm_Backend.Controllers
                     {
                         if (response.Headers.TryGetValues("x-restli-id", out var headerValues))
                         {
+                            
                             var postId = headerValues.FirstOrDefault();
                             if (postId != null)
                             {
+                                
                                 postIds.Add(postId);
                             }
                         }

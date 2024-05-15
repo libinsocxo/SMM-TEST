@@ -65,11 +65,24 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "LinkedInPagesController.cs",
+              "DocumentMoniker": "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend\\Controllers\\LinkedInPagesController.cs",
+              "RelativeDocumentMoniker": "Controllers\\LinkedInPagesController.cs",
+              "ToolTip": "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend\\Controllers\\LinkedInPagesController.cs",
+              "RelativeToolTip": "Controllers\\LinkedInPagesController.cs",
+              "ViewState": "AQIAAMAAAAAAAAAAAAAowHwAAAAlAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-05-14T11:53:50.471Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -81,8 +94,7 @@
               "RelativeToolTip": "..\\Socxo_Smm_Backend.Core\\Model\\uploadimageinitializeuploadobj.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAA0AAAAqAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-05-14T06:47:30.738Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-05-14T06:47:30.738Z"
             },
             {
               "$type": "Document",
@@ -94,8 +106,7 @@
               "RelativeToolTip": "..\\Socxo_Smm_Backend.Core\\Model\\LinkedinInitializeupload.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAA0AAAAuAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-05-14T06:32:21.833Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-05-14T06:32:21.833Z"
             },
             {
               "$type": "Document",
@@ -107,8 +118,7 @@
               "RelativeToolTip": "..\\Socxo_Smm_Backend.Core\\Model\\LinkedInUploadRequestbody.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAoAAAA8AAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-05-14T06:31:28.319Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-05-14T06:31:28.319Z"
             },
             {
               "$type": "Document",
@@ -120,21 +130,7 @@
               "RelativeToolTip": "..\\Socxo_Smm_Backend.Core\\Model\\PostContent.cs",
               "ViewState": "AQIAAAcAAAAAAAAAAAAAABcAAAAuAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-05-13T12:26:49.949Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "LinkedInPagesController.cs",
-              "DocumentMoniker": "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend\\Controllers\\LinkedInPagesController.cs",
-              "RelativeDocumentMoniker": "Controllers\\LinkedInPagesController.cs",
-              "ToolTip": "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend\\Controllers\\LinkedInPagesController.cs",
-              "RelativeToolTip": "Controllers\\LinkedInPagesController.cs",
-              "ViewState": "AQIAAF0AAAAAAAAAAAAqwGEAAAA7AAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-05-07T06:17:39.628Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-05-13T12:26:49.949Z"
             },
             {
               "$type": "Document",
@@ -146,8 +142,7 @@
               "RelativeToolTip": "..\\Socxo_Smm_Backend.Core\\Model\\AccessTokenBody.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-05-14T09:42:07.408Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-05-14T09:42:07.408Z"
             },
             {
               "$type": "Document",
