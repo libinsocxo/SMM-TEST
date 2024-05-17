@@ -372,6 +372,28 @@ namespace Socxo_Smm_Backend.Controllers
 
         }
 
+        [HttpPost("GetUserProfile")]
+        public async Task<ActionResult> getuserprofile([FromBody] AccessTokenBody token)
+        {
+            var client = _httpClientFactory.CreateClient();
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.accesstoken);
+            var apiurl = "https://api.linkedin.com/v2/userinfo";
+
+            var response = await client.GetAsync(apiurl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+
+                return Ok(content);
+            }
+            else
+            {
+                return BadRequest();
+            }
+        }
+
 
 
 
