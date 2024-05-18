@@ -41,7 +41,7 @@ namespace Socxo_Smm_Backend.Controllers
         [HttpGet("GetOAuthToken")]
         public IActionResult OAuthToken()
         {
-            var redirecturl = "http://localhost:4200/home";
+            var redirecturl = "http://localhost:4200/linkedin/redirect";
             var clientid = "86dsonuq146byy";
             var apiUrl = $"https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientid}&redirect_uri={Uri.EscapeDataString(redirecturl)}&state=foobar&scope=rw_organization_admin%20r_organization_social%20r_organization_social_feed%20w_organization_social";
 
@@ -69,25 +69,29 @@ namespace Socxo_Smm_Backend.Controllers
 
             formContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/x-www-form-urlencoded");
 
-           
-            var response = await client.PostAsync("https://www.linkedin.com/oauth/v2/accessToken", formContent);
-
-       
-            if (response.IsSuccessStatusCode)
+            try
             {
+                var response = await client.PostAsync("https://www.linkedin.com/oauth/v2/accessToken", formContent);
+                
+                if (response.IsSuccessStatusCode)
+                {
               
-                var responseContent = await response.Content.ReadAsStringAsync();
-             
-                //dynamic responseData = JsonConvert.DeserializeObject<dynamic>(responseContent);
-
-            
-                return Ok(responseContent);
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    
+                    return Ok(responseContent);
+                }
+                else
+                {
+                    var err_msg = response.Content.ReadAsStringAsync();
+                    
+                    return StatusCode((int)response.StatusCode, err_msg);
+                }
             }
-            else
+            catch(Exception ex)
             {
-               
-                return BadRequest($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+              return StatusCode(500, $"Internal server error  : {ex.Message}");
             }
+            
         }
 
 
@@ -97,7 +101,7 @@ namespace Socxo_Smm_Backend.Controllers
 
             var client = _httpClientFactory.CreateClient();
 
-            Console.WriteLine(request.accesstoken);
+            //Console.WriteLine(request.accesstoken);
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", request.accesstoken);
             client.DefaultRequestHeaders.Add("X-Restli-Protocol-Version", "2.0.0");
@@ -105,21 +109,31 @@ namespace Socxo_Smm_Backend.Controllers
 
             var apiUrl = "https://api.linkedin.com/rest/organizationAcls?q=roleAssignee&role=ADMINISTRATOR&projection=(elements*(*,roleAssignee~(localizedFirstName,localizedLastName),organization~(localizedName)))";
 
-            var response = await client.GetAsync(apiUrl);
-             
-            if (response.IsSuccessStatusCode)
+            try
             {
-                // Read content
-                var content = await response.Content.ReadAsStringAsync();
-                return Ok(content);
+                var response = await client.GetAsync(apiUrl);
+                
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    // Read content
+                    var content = await response.Content.ReadAsStringAsync();
+                    return Ok(content);
+                }
+                else
+                {
+                    Console.WriteLine($"Error: {response.StatusCode}");
+                    var msg_res = await response.Content.ReadAsStringAsync();
+                    
+                    return StatusCode((int)response.StatusCode, msg_res);
+                }
+                
+                
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine($"Error: {response.StatusCode}");
-
-                return BadRequest();
+               return StatusCode(500, $"Internal server error  : {ex.Message}");
             }
-
         }
 
         [HttpPost("PostTextToLinkedin")]
@@ -162,6 +176,8 @@ namespace Socxo_Smm_Backend.Controllers
                 try
                 {
                     var response = await client.SendAsync(request);
+                    var msg_res = response.Content.ReadAsStringAsync();
+                    
                     if (response.IsSuccessStatusCode && response.StatusCode == System.Net.HttpStatusCode.Created)
                     {
                         if (response.Headers.TryGetValues("x-restli-id", out var headerValues))
@@ -179,13 +195,15 @@ namespace Socxo_Smm_Backend.Controllers
                     {
                         var responseMessage = await response.Content.ReadAsStringAsync();
                         Console.WriteLine($"Failed to post for orgid {orgid}: {responseMessage}");
+                        return StatusCode((int)response.StatusCode, msg_res);
                     }
 
                 }
                 catch (Exception ex)
                 {
 
-                    Console.WriteLine($"Exception occurred for orgid {orgid}: {ex.Message}");
+                    return StatusCode(500, $"Internal server error during posting the text : {ex.Message}");
+                    
                 }
             }
 
@@ -194,20 +212,33 @@ namespace Socxo_Smm_Backend.Controllers
 
 
         [HttpPost("PostImageWithContentToLinkedin")]
+        // optimized verision of the api 
         public async Task<ActionResult<HttpResponseMessage>> PostImage([FromBody] PostContent content)
         {
             var client = _httpClientFactory.CreateClient();
-
             var postIds = new List<string>();
-
-            //var imageids = new List<string>();
-
             var imageuploadinfo = new List<uploadimageinitializeuploadobj>();
-            //var uploadurls = new List<string>();
 
-            foreach(string orgid in content.Orgids)
+            // Centralize and configure client headers
+            client.DefaultRequestHeaders.Clear();
+            client.DefaultRequestHeaders.Add("X-Restli-Protocol-Version", "2.0.0");
+            client.DefaultRequestHeaders.Add("LinkedIn-Version", "202304");
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", content.accesstoken);
+
+            // Validate and convert base64 image once
+            byte[] imageBytes;
+            try
             {
-                // intializing the image upload to the org assets 
+                imageBytes = Convert.FromBase64String(content.base64img);
+            }
+            catch (FormatException)
+            {
+                return BadRequest("Invalid base64 string");
+            }
+
+            // Initialize image upload for each org
+            foreach (string orgid in content.Orgids)
+            {
                 var requestBody = new
                 {
                     initializeUploadRequest = new
@@ -216,161 +247,303 @@ namespace Socxo_Smm_Backend.Controllers
                     }
                 };
 
-                var jsonbody = Newtonsoft.Json.JsonConvert.SerializeObject(requestBody);
-
-                var request = new HttpRequestMessage(HttpMethod.Post, "https://api.linkedin.com/rest/images?action=initializeUpload");
-                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", content.accesstoken);
-                request.Content = new StringContent(jsonbody,Encoding.UTF8,"application/json");
-
-                client.DefaultRequestHeaders.Clear();
-                client.DefaultRequestHeaders.Add("X-Restli-Protocol-Version", "2.0.0");
-                client.DefaultRequestHeaders.Add("LinkedIn-Version", "202304");
+                var jsonBody = Newtonsoft.Json.JsonConvert.SerializeObject(requestBody);
+                var request = new HttpRequestMessage(HttpMethod.Post, "https://api.linkedin.com/rest/images?action=initializeUpload")
+                {
+                    Content = new StringContent(jsonBody, Encoding.UTF8, "application/json")
+                };
 
                 try
                 {
                     var req = await client.SendAsync(request);
-
                     var responseString = await req.Content.ReadAsStringAsync();
 
                     if (req.IsSuccessStatusCode)
                     {
                         var uploadResponse = JsonConvert.DeserializeObject<LinkedInUploadRequestbody>(responseString);
-                        if(uploadResponse?.Value != null)
+                        if (uploadResponse?.Value != null)
                         {
-                            var Uploadurl = uploadResponse.Value.uploadUrl;
-                            var Image = uploadResponse.Value.image;
-
                             imageuploadinfo.Add(new uploadimageinitializeuploadobj
                             {
-                                image = Image,
-                                uploadUrl = Uploadurl,
-                                orgid = orgid,
-
+                                image = uploadResponse.Value.image,
+                                uploadUrl = uploadResponse.Value.uploadUrl,
+                                orgid = orgid
                             });
-
-
                         }
-
                     }
-
+                    else
+                    {
+                        return StatusCode((int)req.StatusCode, responseString);
+                    }
                 }
-                catch (FormatException ex)
+                catch (Exception ex)
                 {
-                    return BadRequest("Invalid base64 string");
+                    return StatusCode(500, $"Internal server error during initialization for orgid {orgid}: {ex.Message}");
                 }
             }
 
-            // semding the curl request and making the post request with image to linkedin api
-
-                foreach (var imgobj in imageuploadinfo)
+            // Upload image and create posts
+            foreach (var imgobj in imageuploadinfo)
+            {
+                using var imageContent = new ByteArrayContent(imageBytes)
                 {
-                    byte[] imageBytes;
+                    Headers = { ContentType = new MediaTypeHeaderValue("image/jpeg") }
+                };
 
-                    try
+                var uploadRequest = new HttpRequestMessage(HttpMethod.Put, imgobj.uploadUrl)
+                {
+                    Content = imageContent
+                };
+
+                try
+                {
+                    var response = await client.SendAsync(uploadRequest);
+
+                    if (response.IsSuccessStatusCode)
                     {
-                        imageBytes = Convert.FromBase64String(content.base64img);
-                    }
-                    catch (FormatException)
-                    {
-                        return BadRequest("Invalid base64 string");
-                    }
-
-                    using var imageContent = new ByteArrayContent(imageBytes);
-
-                    imageContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
-
-                    var request = new HttpRequestMessage(HttpMethod.Put, imgobj.uploadUrl);
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", content.accesstoken);
-
-                    request.Content = imageContent;
-
-                    try
-                    {
-                        // Send the request
-                        var response = await client.SendAsync(request);
-
-                        // Check the response status
-                        if (response.IsSuccessStatusCode)
+                        var postRequestBody = new
                         {
-
-                            var requestbody = new
+                            author = imgobj.orgid,
+                            commentary = content.textcontent,
+                            visibility = "PUBLIC",
+                            distribution = new
                             {
-                                author = imgobj.orgid,
-                                commentary = content.textcontent,
-                                visibility = "PUBLIC",
-                                distribution = new
-                                {
-                                    feedDistribution = "MAIN_FEED",
-                                    targetEntities = new object[] { },
-                                    thirdPartyDistributionChannels = new object[] { }
-                                },
-                                content = new
-                                {
-                                    media = new
-                                    {
-                                        altText = "",
-                                        id = imgobj.image
-
-                                    }
-                                },
-                                lifecycleState = "PUBLISHED",
-                                isReshareDisabledByAuthor = false
-                            };
-                            var jsonBody = Newtonsoft.Json.JsonConvert.SerializeObject(requestbody);
-                            var requestforpost = new HttpRequestMessage(HttpMethod.Post, "https://api.linkedin.com/rest/posts");
-                            requestforpost.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", content.accesstoken);
-                            requestforpost.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
-                            client.DefaultRequestHeaders.Clear();
-                            client.DefaultRequestHeaders.Add("X-Restli-Protocol-Version", "2.0.0");
-                            client.DefaultRequestHeaders.Add("LinkedIn-Version", "202304");
-
-                            try
+                                feedDistribution = "MAIN_FEED",
+                                targetEntities = new object[] { },
+                                thirdPartyDistributionChannels = new object[] { }
+                            },
+                            content = new
                             {
-                               var responsepost = await client.SendAsync(requestforpost);
-                                if (responsepost.IsSuccessStatusCode && responsepost.StatusCode == System.Net.HttpStatusCode.Created)
+                                media = new
                                 {
-                                    if (response.Headers.TryGetValues("x-restli-id", out var headerValues))
-                                    {
-                                        var postId = headerValues.FirstOrDefault();
-                                        if (postId != null)
-                                        {
-                                            postIds.Add(postId);
-                                        }
-                                    }
+                                    altText = "",
+                                    id = imgobj.image
                                 }
-                                else
+                            },
+                            lifecycleState = "PUBLISHED",
+                            isReshareDisabledByAuthor = false
+                        };
+
+                        var postJsonBody = Newtonsoft.Json.JsonConvert.SerializeObject(postRequestBody);
+                        var postRequest = new HttpRequestMessage(HttpMethod.Post, "https://api.linkedin.com/rest/posts")
+                        {
+                            Content = new StringContent(postJsonBody, Encoding.UTF8, "application/json")
+                        };
+
+                        var postResponse = await client.SendAsync(postRequest);
+
+                        if (postResponse.IsSuccessStatusCode && postResponse.StatusCode == System.Net.HttpStatusCode.Created)
+                        {
+                            if (postResponse.Headers.TryGetValues("x-restli-id", out var headerValues))
+                            {
+                                var postId = headerValues.FirstOrDefault();
+                                if (postId != null)
                                 {
-                                    var responseMessage = await response.Content.ReadAsStringAsync();
-                                    Console.WriteLine($"Failed to post for orgid {imgobj.orgid}: {responseMessage}");
+                                    postIds.Add(postId);
                                 }
                             }
-                            catch (Exception ex)
-                            {
-
-                                Console.WriteLine($"Exception occurred for orgid {imgobj.orgid}: {ex.Message}");
-                            }
-
-                            //var responseBody = await response.Content.ReadAsStringAsync();
-                            //return Ok(responseBody);
-
                         }
                         else
                         {
-                            var errorContent = await response.Content.ReadAsStringAsync();
-                            return StatusCode((int)response.StatusCode, errorContent);
+                            var responseMessage = await postResponse.Content.ReadAsStringAsync();
+                            Console.WriteLine($"Failed to post for orgid {imgobj.orgid}: {responseMessage}");
                         }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        return StatusCode(500, $"Internal server error: {ex.Message}");
+                        var errorContent = await response.Content.ReadAsStringAsync();
+                        return StatusCode((int)response.StatusCode, errorContent);
                     }
-
-
                 }
-            
-            return Ok(postIds);
+                catch (Exception ex)
+                {
+                    return StatusCode(500, $"Internal server error during image upload for orgid {imgobj.orgid}: {ex.Message}");
+                }
+            }
 
+            return Ok(postIds);
         }
+        
+        // end of the optimized version of the api
+        //public async Task<ActionResult<HttpResponseMessage>> PostImage([FromBody] PostContent content)
+        //{
+        //    var client = _httpClientFactory.CreateClient();
+
+        //    var postIds = new List<string>();
+
+        //    //var imageids = new List<string>();
+
+        //    var imageuploadinfo = new List<uploadimageinitializeuploadobj>();
+        //    //var uploadurls = new List<string>();
+
+        //    foreach(string orgid in content.Orgids)
+        //    {
+        //        // intializing the image upload to the org assets 
+        //        var requestBody = new
+        //        {
+        //            initializeUploadRequest = new
+        //            {
+        //                owner = orgid,
+        //            }
+        //        };
+
+        //        var jsonbody = Newtonsoft.Json.JsonConvert.SerializeObject(requestBody);
+
+        //        var request = new HttpRequestMessage(HttpMethod.Post, "https://api.linkedin.com/rest/images?action=initializeUpload");
+        //        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", content.accesstoken);
+        //        request.Content = new StringContent(jsonbody,Encoding.UTF8,"application/json");
+
+        //        client.DefaultRequestHeaders.Clear();
+        //        client.DefaultRequestHeaders.Add("X-Restli-Protocol-Version", "2.0.0");
+        //        client.DefaultRequestHeaders.Add("LinkedIn-Version", "202304");
+
+        //        try
+        //        {
+        //            var req = await client.SendAsync(request);
+
+        //            var responseString = await req.Content.ReadAsStringAsync();
+
+        //            if (req.IsSuccessStatusCode)
+        //            {
+        //                var uploadResponse = JsonConvert.DeserializeObject<LinkedInUploadRequestbody>(responseString);
+        //                if(uploadResponse?.Value != null)
+        //                {
+        //                    var Uploadurl = uploadResponse.Value.uploadUrl;
+        //                    var Image = uploadResponse.Value.image;
+
+        //                    imageuploadinfo.Add(new uploadimageinitializeuploadobj
+        //                    {
+        //                        image = Image,
+        //                        uploadUrl = Uploadurl,
+        //                        orgid = orgid,
+
+        //                    });
+
+
+        //                }
+
+        //            }
+
+        //        }
+        //        catch (FormatException ex)
+        //        {
+        //            return BadRequest("Invalid base64 string");
+        //        }
+        //    }
+
+        //    // semding the curl request and making the post request with image to linkedin api
+
+        //        foreach (var imgobj in imageuploadinfo)
+        //        {
+        //            byte[] imageBytes;
+
+        //            try
+        //            {
+        //                imageBytes = Convert.FromBase64String(content.base64img);
+        //            }
+        //            catch (FormatException)
+        //            {
+        //                return BadRequest("Invalid base64 string");
+        //            }
+
+        //            using var imageContent = new ByteArrayContent(imageBytes);
+
+        //            imageContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+
+        //            var request = new HttpRequestMessage(HttpMethod.Put, imgobj.uploadUrl);
+        //            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", content.accesstoken);
+
+        //            request.Content = imageContent;
+
+        //            try
+        //            {
+        //                // Send the request
+        //                var response = await client.SendAsync(request);
+
+        //                // Check the response status
+        //                if (response.IsSuccessStatusCode)
+        //                {
+
+        //                    var requestbody = new
+        //                    {
+        //                        author = imgobj.orgid,
+        //                        commentary = content.textcontent,
+        //                        visibility = "PUBLIC",
+        //                        distribution = new
+        //                        {
+        //                            feedDistribution = "MAIN_FEED",
+        //                            targetEntities = new object[] { },
+        //                            thirdPartyDistributionChannels = new object[] { }
+        //                        },
+        //                        content = new
+        //                        {
+        //                            media = new
+        //                            {
+        //                                altText = "",
+        //                                id = imgobj.image
+
+        //                            }
+        //                        },
+        //                        lifecycleState = "PUBLISHED",
+        //                        isReshareDisabledByAuthor = false
+        //                    };
+        //                    var jsonBody = Newtonsoft.Json.JsonConvert.SerializeObject(requestbody);
+        //                    var requestforpost = new HttpRequestMessage(HttpMethod.Post, "https://api.linkedin.com/rest/posts");
+        //                    requestforpost.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", content.accesstoken);
+        //                    requestforpost.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+        //                    client.DefaultRequestHeaders.Clear();
+        //                    client.DefaultRequestHeaders.Add("X-Restli-Protocol-Version", "2.0.0");
+        //                    client.DefaultRequestHeaders.Add("LinkedIn-Version", "202304");
+
+        //                    try
+        //                    {
+        //                       var responsepost = await client.SendAsync(requestforpost);
+        //                        if (responsepost.IsSuccessStatusCode && responsepost.StatusCode == System.Net.HttpStatusCode.Created)
+        //                        {
+
+        //                            if (responsepost.Headers.TryGetValues("x-restli-id", out var headerValues))
+        //                            {
+
+        //                                var postId = headerValues.FirstOrDefault();
+        //                                if (postId != null)
+        //                                {
+        //                                    postIds.Add(postId);
+        //                                }
+        //                            }
+        //                        }
+        //                        else
+        //                        {
+        //                            var responseMessage = await response.Content.ReadAsStringAsync();
+        //                            Console.WriteLine($"Failed to post for orgid {imgobj.orgid}: {responseMessage}");
+        //                        }
+        //                    }
+        //                    catch (Exception ex)
+        //                    {
+
+        //                        Console.WriteLine($"Exception occurred for orgid {imgobj.orgid}: {ex.Message}");
+        //                    }
+
+        //                    //var responseBody = await response.Content.ReadAsStringAsync();
+        //                    //return Ok(responseBody);
+
+        //                }
+        //                else
+        //                {
+        //                    var errorContent = await response.Content.ReadAsStringAsync();
+        //                    return StatusCode((int)response.StatusCode, errorContent);
+        //                }
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                return StatusCode(500, $"Internal server error: {ex.Message}");
+        //            }
+
+
+        //        }
+
+        //    return Ok(postIds);
+
+        //}
 
         [HttpPost("GetUserProfile")]
         public async Task<ActionResult> getuserprofile([FromBody] AccessTokenBody token)
