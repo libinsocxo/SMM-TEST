@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
 using System.Net.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Socxo_Smm_Backend.Infrastructure.Socxo_Smm_Backend.Infrastructure.Repository.Interface;
@@ -8,7 +9,9 @@ using System.Net.Http.Headers;
 using System.Text.Json.Nodes;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using static System.Net.Mime.MediaTypeNames;
+using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace Socxo_Smm_Backend.Controllers
 {
@@ -366,132 +369,349 @@ namespace Socxo_Smm_Backend.Controllers
         }
         
         [HttpPost("GetUserProfile")]
-        public async Task<ActionResult> getuserprofile([FromBody] AccessTokenBody token)
+        public async Task<ActionResult<UserProfileModel>> getuserprofile([FromBody] AccessTokenBody token)
         {
-            var client = _httpClientFactory.CreateClient();
 
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.accesstoken);
-            var apiurl = "https://api.linkedin.com/v2/me";
-
-            var response = await client.GetAsync(apiurl);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync();
-
-                return Ok(content);
-            }
-            else
-            {
-                return BadRequest();
-            }
-        }
-
-        [HttpPost("GetAdminPagesofUser-v-202405")]
-        public async Task<ActionResult<dynamic>> getadminpages_latest([FromBody] AccessTokenBody request)
-        {
-            var client = _httpClientFactory.CreateClient();
-            var UserAccessPages = new List<AdminPagesModel>();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", request.accesstoken);
-            client.DefaultRequestHeaders.Add("X-Restli-Protocol-Version", "2.0.0");
+            var client = new HttpClient();
             client.DefaultRequestHeaders.Add("LinkedIn-Version", "202405");
-
-            var apiurl = "https://api.linkedin.com/rest/organizationAcls?q=roleAssignee&role=ADMINISTRATOR";
             
-            // making the request to endpoint and retreaving the org id
-
             try
             {
-                var response = await client.GetAsync(apiurl);
-                var responsecontent = await response.Content.ReadAsStringAsync();
-                if (response.IsSuccessStatusCode)
+                var req = await client.GetAsync($"https://api.linkedin.com/rest/me/?oauth2_access_token={token.accesstoken}");
+                var response = await req.Content.ReadAsStringAsync();
+
+                if (req.IsSuccessStatusCode)
                 {
-                    
-                    using (JsonDocument doc = JsonDocument.Parse(responsecontent))
+                    using ( JsonDocument doc = JsonDocument.Parse(response))
                     {
                         JsonElement root = doc.RootElement;
-                        JsonElement elements = root.GetProperty("elements");
+                        JsonElement firstNameElement =
+                            root.GetProperty("firstName").GetProperty("localized").GetProperty("en_US");
+                        string firstName = firstNameElement.ToString();
+
+                        JsonElement secondNameElement =
+                            root.GetProperty("lastName").GetProperty("localized").GetProperty("en_US");
+                        string secondName = secondNameElement.ToString();
+
+                        JsonElement aboutElement = root.GetProperty("localizedHeadline");
+                        string about = aboutElement.ToString();
+
+                        JsonElement profileUrnElement = root.GetProperty("profilePicture").GetProperty("displayImage");
+                        string profileUrn = profileUrnElement.ToString();
                         
-                        foreach (JsonElement element in elements.EnumerateArray())
+                        // req to get the profile url from the imageurn
+                        var imageclient = new HttpClient();
+                        imageclient.DefaultRequestHeaders.Authorization =
+                            new AuthenticationHeaderValue("Bearer", token.accesstoken);
+                        imageclient.DefaultRequestHeaders.Add("LinkedIn-Version", "202405");
+                        string urn = profileUrn;
+                        string[] parts = urn.Split(':');
+                        string urnid = parts[^1];
+                    
+                        try
                         {
-                            string organization = element.GetProperty("organization").GetString();
-                            if (organization.Length>0)
+                            var url_req = await imageclient.GetAsync($"https://api.linkedin.com/rest/images/urn:li:image:{urnid}");
+                            var url_response = await url_req.Content.ReadAsStringAsync();
+
+                            if (url_req.IsSuccessStatusCode)
                             {
-                                //retreaving the id part from the urn 
-                                string urn = organization;
-                                string[] parts = urn.Split(':');
-                                string urnid = parts[^1];
-                                // sending the orgid for getting the org name
-
-                                var orgnameUrl = $"https://api.linkedin.com/rest/organizations/{urnid}";
-                                try
+                                using (JsonDocument doc1 = JsonDocument.Parse(url_response))
                                 {
-                                    var resp = await client.GetAsync(orgnameUrl);
-                                    var content = await resp.Content.ReadAsStringAsync();
-                                    if (resp.IsSuccessStatusCode)
-                                    {
-                                        
-                                        using (JsonDocument doc1 = JsonDocument.Parse(content))
-                                        {
-                                            JsonElement root1 = doc1.RootElement;
-                                            string localizedName = root1.GetProperty("localizedName").GetString();
-                                            
-                                            // seeting the org details
-                                            AdminPagesModel adminpagemodel = new AdminPagesModel()
-                                            {
-                                                OrgId = urn,
-                                                OrgName = localizedName
-                                            };
-                                            
-                                            UserAccessPages.Add(adminpagemodel);
+                                    JsonElement root1 = doc1.RootElement;
+                                    JsonElement DownloadUrlElement = root1.GetProperty("downloadUrl");
+                                    string DownloadUrl = DownloadUrlElement.ToString();
 
-                                        }
+                                    if (DownloadUrl.Length > 0)
+                                    {
+                                        UserProfileModel profilemodel = new UserProfileModel()
+                                        {
+                                            firstName =  firstName,
+                                            secondName = secondName,
+                                            about = about,
+                                            profileUrl = DownloadUrl
+                                        };
+
+                                        return Ok(profilemodel);
                                     }
                                     else
                                     {
-                                        return StatusCode((int)resp.StatusCode, content);
+                                        return Content("Error while Parsing from the Json Response for ProfileUrn.");
                                     }
-                                    
                                 }
-                                catch (Exception ex)
-                                {
-                                    return StatusCode(500, $"Internal server error occured! : {ex.Message}");
-                                }
-                                
                             }
                             else
                             {
-                                return NotFound();
+                                return StatusCode((int)url_req.StatusCode, url_response);
                             }
+                            
                         }
+                        catch (Exception ex)
+                        {
+                            return StatusCode(500, $"Internal server error occured! : {ex.Message}");
+                        }
+
                     }
                 }
                 else
                 {
-                    return StatusCode((int)response.StatusCode, responsecontent);
+                    return StatusCode((int)req.StatusCode, response);
                 }
             }
-
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error occured! : {ex.Message}");
+                return StatusCode(500, $"Internal server error occured! : {ex.Message}"); 
             }
 
-            return Ok(UserAccessPages);
+
         }
 
+        
+        
+        [HttpPost("GetAdminPagesofUser-v-202405")]
+        public async Task<ActionResult<AdminPagesModel>> GetAdminPagesLatest([FromBody] AccessTokenBody request)
+        {
+            // var watch = new Stopwatch();
+            // watch.Start();
+            var client = _httpClientFactory.CreateClient();
+            var client1 = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", request.accesstoken);
+            client.DefaultRequestHeaders.Add("X-Restli-Protocol-Version", "2.0.0");
+            client.DefaultRequestHeaders.Add("LinkedIn-Version", "202405");
+            client1.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", request.accesstoken);
+            client1.DefaultRequestHeaders.Add("LinkedIn-Version","202405");
+            
+            var apiurl = "https://api.linkedin.com/rest/organizationAcls?q=roleAssignee&role=ADMINISTRATOR";
+        
+            try
+            {
+                var response = await client.GetAsync(apiurl);
+                var responseContent = await response.Content.ReadAsStringAsync();
+                if (response.IsSuccessStatusCode)
+                {
+                    var userAccessPages = new List<AdminPagesModel>();
+                    using (JsonDocument doc = JsonDocument.Parse(responseContent))
+                    {
+                        JsonElement elements = doc.RootElement.GetProperty("elements");
+                        var tasks = elements.EnumerateArray().Select(async element =>
+                        {
+                            string organization = element.GetProperty("organization").GetString();
+                            if (!string.IsNullOrEmpty(organization))
+                            {
+                                string urn = organization;
+                                string[] parts = urn.Split(':');
+                                string urnid = parts[^1];
+                                var orgnameUrl = $"https://api.linkedin.com/rest/organizations/{urnid}";
+                                var followerscountUrl =
+                                    $"https://api.linkedin.com/rest/networkSizes/{urn}?edgeType=COMPANY_FOLLOWED_BY_MEMBER";
+        
+                                var orgNameTask = GetOrganizationName(client, orgnameUrl);
+                           
+                                var followersCountTask = GetFollowersCount(client1, followerscountUrl);
+                           
+                          
+        
+                                await Task.WhenAll(orgNameTask, followersCountTask);
+        
+                                var userProfileModel = new AdminPagesModel
+                                {
+                                    OrgId = urn,
+                                    OrgName = orgNameTask.Result,
+                                    FollowerCount = followersCountTask.Result
+                                };
+                                userAccessPages.Add(userProfileModel);
+        
+                            }
+                        }).ToArray();
+                        await Task.WhenAll(tasks);
+                    }
+      
+                    return Ok(userAccessPages);
+                }
+                else
+                {
+                    return StatusCode((int)response.StatusCode, responseContent);
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error occurred: {ex.Message}");
+            }
+        }
+        
+        private async Task<string> GetOrganizationName(HttpClient client, string orgnameUrl)
+        {
+            var response = await client.GetAsync(orgnameUrl);
+            var content = await response.Content.ReadAsStringAsync();
 
+            if (response.IsSuccessStatusCode)
+            {
+                using (JsonDocument doc = JsonDocument.Parse(content))
+                {
+                    JsonElement root = doc.RootElement;
+                    return root.GetProperty("localizedName").GetString();
+                }
+            }
+            else
+            {
+                throw new Exception($"Failed to fetch organization name: {content}");
+            }
+        }
+        
+        
+        private async Task<int> GetFollowersCount(HttpClient client1, string followerscountUrl)
+        {
+            var response = await client1.GetAsync(followerscountUrl);
+            var content = await response.Content.ReadAsStringAsync();
 
+            if (response.IsSuccessStatusCode)
+            {
+                using (JsonDocument doc = JsonDocument.Parse(content))
+                {
+                    JsonElement root = doc.RootElement;
+                    return root.GetProperty("firstDegreeSize").GetInt32();
+                }
+            }
+            else
+            {
+                throw new Exception($"Failed to fetch followers count: {content}");
+            }
+        }
 
+        [HttpPost("GetOrgPagesPosts")]
+        public async Task<ActionResult<PageModelResponse>> GetOrgPagesPosts([FromBody] PostModelRequest postrequest)
+        {
+            var MainClient = new HttpClient();
+            MainClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", postrequest.Accesstoken);
+            MainClient.DefaultRequestHeaders.Add("LinkedIn-Version","202405");
+            
+            
 
+            string urn = postrequest.Orgid;
+            string[] parts = urn.Split(':');
+            string urnid = parts[^1];
+            var count = postrequest.Count;
+            
+            var MainUrl =
+                $"https://api.linkedin.com/rest/posts?author=urn%3Ali%3Aorganization%3A{urnid}&q=author&count={count}&sortBy=LAST_MODIFIED";
 
+            try
+            {
+                var response = await MainClient.GetAsync(MainUrl);
+                var responseContent = await response.Content.ReadAsStringAsync();
 
+                if (response.IsSuccessStatusCode)
+                {
+                    var postcontentlist = new List<PageModelResponse>();
+                    
 
+                    using (JsonDocument doc = JsonDocument.Parse(responseContent))
+                    {
+                        JsonElement elements = doc.RootElement.GetProperty("elements");
+                        var tasks = elements.EnumerateArray().Select(async element =>
+                        {
+                            string PostTitle = element.GetProperty("commentary").ToString();
+                            JsonElement postcontent =
+                                element.GetProperty("content").GetProperty("media").GetProperty("id");
+                            string imageurn = postcontent.ToString();
+                            
+                            Task<string> imageUrlTask = null;
+                            if (!string.IsNullOrEmpty(imageurn))
+                            {
+                                var imgurl = $"https://api.linkedin.com/rest/images/{imageurn}";
+                                var imageUrl = GetPostImageUrl(MainClient, imgurl);
+                               
+                            }
 
+                            var userprofileclient = new HttpClient();
+                            userprofileclient.DefaultRequestHeaders.Add("LinkedIn-Version", "202405");
+                            var authorprofileurl = $"https://api.linkedin.com/rest/me/?oauth2_access_token={postrequest.Accesstoken}";
+                            var authortask = GetUserProfile(userprofileclient,authorprofileurl);
 
+                            var allTasks = new List<Task> { authortask };
+                            
+                            if (imageUrlTask != null)
+                            {
+                                allTasks.Add(imageUrlTask);
+                            }
+                            
+                            await Task.WhenAll(allTasks);
+                            
+                            
 
+                            PageModelResponse pageposts = new PageModelResponse()
+                            {
+                                Author = authortask.Result,
+                                Commentary = PostTitle,
+                                CreatedAt = "",
+                                PostUrl = ""
+                            };
+                            
+                            if (imageUrlTask != null)
+                            {
+                                pageposts.PostUrl = await imageUrlTask;
+                            }
+                            
+                            postcontentlist.Add(pageposts);
+                            
+                        }).ToArray();
+                        await Task.WhenAll(tasks);
+                    }
 
+                    return Ok(postcontentlist);
+                }
+                else
+                {
+                    return StatusCode((int)response.StatusCode, responseContent);
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal Server Error: {ex.Message}");
+            }
 
+        }
+
+        private async Task<string> GetUserProfile(HttpClient UserProfileClient, string userprofileurl)
+        {
+            var response = await UserProfileClient.GetAsync(userprofileurl);
+            var cnt = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                using (JsonDocument doc = JsonDocument.Parse(cnt))
+                {
+                    JsonElement root = doc.RootElement;
+                    return root.GetProperty("localizedFirstName").GetString();
+                }
+            }
+            else
+            {
+                throw new Exception($"Failed to get the post image: {cnt}");
+            }
+        }
+
+    
+
+        private async Task<string> GetPostImageUrl(HttpClient imgclient, string imgurl)
+        {
+            var response = await imgclient.GetAsync(imgurl);
+            var content = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                using (JsonDocument doc = JsonDocument.Parse(content))
+                {
+                    JsonElement root = doc.RootElement;
+                    return root.GetProperty("downloadUrl").GetString();
+                }
+            }
+            else
+            {
+                throw new Exception($"Failed to get the post image: {content}");
+            }
+        }
+        
+        
 
 
     }

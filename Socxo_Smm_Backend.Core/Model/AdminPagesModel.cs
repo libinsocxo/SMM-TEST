@@ -7,5 +7,7 @@ public class AdminPagesModel
     public string? OrgName { get; set; }
     
     public string? OrgId { get; set; }
-    
+
+    public int FollowerCount { get; set; }
+
 }
