@@ -611,14 +611,22 @@ namespace Socxo_Smm_Backend.Controllers
                         var tasks = elements.EnumerateArray().Select(async element =>
                         {
                             string PostTitle = element.GetProperty("commentary").ToString();
-                            JsonElement postcontent =
-                                element.GetProperty("content").GetProperty("media").GetProperty("id");
-                            string imageurn = postcontent.ToString();
-                            
-                            Task<string> imageUrlTask = null;
-                            if (!string.IsNullOrEmpty(imageurn))
+
+                            string imageUrn = null;
+                            if (element.TryGetProperty("content", out JsonElement contentElement) &&
+                                contentElement.TryGetProperty("media", out JsonElement mediaElement) &&
+                                mediaElement.TryGetProperty("id", out JsonElement idElement))
                             {
-                                var imgurl = $"https://api.linkedin.com/rest/images/{imageurn}";
+                                imageUrn = idElement.ToString();
+                            }
+
+
+
+                            Task<string> imageUrlTask = null;
+                            if (!string.IsNullOrEmpty(imageUrn))
+                            {
+                                //Console.WriteLine(imageUrn);
+                                var imgurl = $"https://api.linkedin.com/rest/images/{imageUrn}";
                                 var imageUrl = GetPostImageUrl(MainClient, imgurl);
                                
                             }
@@ -693,9 +701,11 @@ namespace Socxo_Smm_Backend.Controllers
 
     
 
-        private async Task<string> GetPostImageUrl(HttpClient imgclient, string imgurl)
+        private async Task<string> GetPostImageUrl(HttpClient MainClient, string imgurl)
         {
-            var response = await imgclient.GetAsync(imgurl);
+
+
+            var response = await MainClient.GetAsync(imgurl);
             var content = await response.Content.ReadAsStringAsync();
             if (response.IsSuccessStatusCode)
             {

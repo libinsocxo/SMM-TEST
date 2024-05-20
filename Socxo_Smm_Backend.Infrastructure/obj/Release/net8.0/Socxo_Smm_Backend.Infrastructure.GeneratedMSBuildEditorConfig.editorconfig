@@ -8,6 +8,6 @@ build_property.PlatformNeutralAssembly =
 build_property.EnforceExtendedAnalyzerRules = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = Socxo_Smm_Backend.Infrastructure
-build_property.ProjectDir = C:\Users\Libin Luvis\source\repos\socxo_smm\Socxo_Smm_Backend.Infrastructure\
+build_property.ProjectDir = C:\Users\Libin Luvis\Desktop\SMM-TEST\Socxo_Smm_Backend.Infrastructure\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 

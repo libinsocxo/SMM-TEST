@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "4Eidc0eMa14JGvw1M+Isuja/7iS6uW6qQkuzCLne1+P/wudOlgGJfh6QsGX4sIXNnHSCp2gxShDoAYwKXU5Osw==",
+  "dgSpecHash": "sSxSQBYEwXvf/q7VFea70jEOAuJZKTiQWOHleAQ30/E6bZ0Bg9QHyRkckWaU4meN38bTnjAwlq/LWtg8cIVCjA==",
   "success": true,
-  "projectFilePath": "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend.Core\\Socxo_Smm_Backend.Core.csproj",
+  "projectFilePath": "C:\\Users\\Libin Luvis\\Desktop\\SMM-TEST\\Socxo_Smm_Backend.Core\\Socxo_Smm_Backend.Core.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Libin Luvis\\.nuget\\packages\\awssdk.core\\3.7.100.14\\awssdk.core.3.7.100.14.nupkg.sha512",
     "C:\\Users\\Libin Luvis\\.nuget\\packages\\awssdk.securitytoken\\3.7.100.14\\awssdk.securitytoken.3.7.100.14.nupkg.sha512",
@@ -21,7 +21,9 @@
     "C:\\Users\\Libin Luvis\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\5.0.0\\system.runtime.compilerservices.unsafe.5.0.0.nupkg.sha512",
     "C:\\Users\\Libin Luvis\\.nuget\\packages\\system.security.accesscontrol\\5.0.0\\system.security.accesscontrol.5.0.0.nupkg.sha512",
     "C:\\Users\\Libin Luvis\\.nuget\\packages\\system.security.principal.windows\\5.0.0\\system.security.principal.windows.5.0.0.nupkg.sha512",
-    "C:\\Users\\Libin Luvis\\.nuget\\packages\\zstdsharp.port\\0.7.3\\zstdsharp.port.0.7.3.nupkg.sha512"
+    "C:\\Users\\Libin Luvis\\.nuget\\packages\\zstdsharp.port\\0.7.3\\zstdsharp.port.0.7.3.nupkg.sha512",
+    "C:\\Users\\Libin Luvis\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.5\\microsoft.windowsdesktop.app.ref.8.0.5.nupkg.sha512",
+    "C:\\Users\\Libin Luvis\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.5\\microsoft.aspnetcore.app.ref.8.0.5.nupkg.sha512"
   ],
   "logs": []
 }

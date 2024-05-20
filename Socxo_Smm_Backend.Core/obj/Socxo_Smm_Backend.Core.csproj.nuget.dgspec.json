@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend.Core\\Socxo_Smm_Backend.Core.csproj": {}
+    "C:\\Users\\Libin Luvis\\Desktop\\SMM-TEST\\Socxo_Smm_Backend.Core\\Socxo_Smm_Backend.Core.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend.Core\\Socxo_Smm_Backend.Core.csproj": {
+    "C:\\Users\\Libin Luvis\\Desktop\\SMM-TEST\\Socxo_Smm_Backend.Core\\Socxo_Smm_Backend.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend.Core\\Socxo_Smm_Backend.Core.csproj",
+        "projectUniqueName": "C:\\Users\\Libin Luvis\\Desktop\\SMM-TEST\\Socxo_Smm_Backend.Core\\Socxo_Smm_Backend.Core.csproj",
         "projectName": "Socxo_Smm_Backend.Core",
-        "projectPath": "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend.Core\\Socxo_Smm_Backend.Core.csproj",
+        "projectPath": "C:\\Users\\Libin Luvis\\Desktop\\SMM-TEST\\Socxo_Smm_Backend.Core\\Socxo_Smm_Backend.Core.csproj",
         "packagesPath": "C:\\Users\\Libin Luvis\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Libin Luvis\\source\\repos\\socxo_smm\\Socxo_Smm_Backend.Core\\obj\\",
+        "outputPath": "C:\\Users\\Libin Luvis\\Desktop\\SMM-TEST\\Socxo_Smm_Backend.Core\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Libin Luvis\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -60,12 +60,22 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.5, 8.0.5]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[8.0.5, 8.0.5]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.203/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.105/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

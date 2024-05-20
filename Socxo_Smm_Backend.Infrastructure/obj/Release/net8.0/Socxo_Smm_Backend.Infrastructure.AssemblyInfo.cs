@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Socxo_Smm_Backend.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+58e60e9ca17cde35fb9c1a86a41510c30d0786bc")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+24b2f12b237eabf3ae526b6d32b039d4db455bf5")]
 [assembly: System.Reflection.AssemblyProductAttribute("Socxo_Smm_Backend.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Socxo_Smm_Backend.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
