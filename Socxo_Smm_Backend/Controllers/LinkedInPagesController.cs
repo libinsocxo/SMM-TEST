@@ -580,6 +580,7 @@ namespace Socxo_Smm_Backend.Controllers
         [HttpPost("GetOrgPagesPosts")]
         public async Task<ActionResult<PageModelResponse>> GetOrgPagesPosts([FromBody] PostModelRequest postrequest)
         {
+    
             var MainClient = new HttpClient();
             MainClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", postrequest.Accesstoken);
@@ -611,51 +612,67 @@ namespace Socxo_Smm_Backend.Controllers
                         var tasks = elements.EnumerateArray().Select(async element =>
                         {
                             string PostTitle = element.GetProperty("commentary").ToString();
-                            JsonElement postcontent =
-                                element.GetProperty("content").GetProperty("media").GetProperty("id");
-                            string imageurn = postcontent.ToString();
                             
-                            Task<string> imageUrlTask = null;
-                            if (!string.IsNullOrEmpty(imageurn))
+                            var createdAtMillis = element.GetProperty("publishedAt").GetInt64();
+                            string postid = element.GetProperty("id").ToString();
+                            var createdAt = DateTimeOffset.FromUnixTimeMilliseconds(createdAtMillis).UtcDateTime;
+
+                            string imageUrn = null;
+                            var Content_type = "";
+                            if (element.TryGetProperty("content", out JsonElement contentElement) &&
+                                contentElement.TryGetProperty("media", out JsonElement mediaElement) &&
+                                mediaElement.TryGetProperty("id", out JsonElement idElement))
                             {
-                                var imgurl = $"https://api.linkedin.com/rest/images/{imageurn}";
-                                var imageUrl = GetPostImageUrl(MainClient, imgurl);
+                                imageUrn = idElement.ToString();
+                                Content_type = "Image";
                             }
-
-                            var userprofileclient = new HttpClient();
-                            userprofileclient.DefaultRequestHeaders.Add("LinkedIn-Version", "202405");
-                            var authorprofileurl = $"https://api.linkedin.com/rest/me/?oauth2_access_token={postrequest.Accesstoken}";
-                            var authortask = GetUserProfile(userprofileclient,authorprofileurl);
-
-                            var allTasks = new List<Task> { authortask };
                             
-                            if (imageUrlTask != null)
+                            if (element.TryGetProperty("content", out JsonElement contentElementMultiimage) &&
+                                contentElementMultiimage.TryGetProperty("multiImage",out JsonElement multiimage))
+                            {
+                                Content_type = "MultiImage";
+                            }
+                            
+                            var imageUrlTask = (string.IsNullOrEmpty(imageUrn))
+                                ? Task.FromResult<string>(null)
+                                : GetPostImageUrl(MainClient, $"https://api.linkedin.com/rest/images/{imageUrn}");
+                            
+                   
+
+                            // var userprofileclient = new HttpClient();
+                            // userprofileclient.DefaultRequestHeaders.Add("LinkedIn-Version", "202405");
+                            // var authorprofileurl = $"https://api.linkedin.com/rest/me/?oauth2_access_token={postrequest.Accesstoken}";
+                            // var authortask = GetUserProfile(userprofileclient,authorprofileurl);
+
+                            var allTasks = new List<Task> {};
+                            
+                            if (imageUrlTask!=null)
                             {
                                 allTasks.Add(imageUrlTask);
                             }
                             
                             await Task.WhenAll(allTasks);
-                            
-                            
 
-                            PageModelResponse pageposts = new PageModelResponse()
+
+                            var pagePost = new PageModelResponse
                             {
-                                Author = authortask.Result,
+                               
                                 Commentary = PostTitle,
-                                CreatedAt = "",
-                                PostUrl = ""
+                                CreatedAt = createdAt.ToString("o"),
+                                PostUrl = imageUrlTask?.Result,
+                                Postid = postid,
+                                Ctntype = Content_type
                             };
                             
-                            if (imageUrlTask != null)
-                            {
-                                pageposts.PostUrl = await imageUrlTask;
-                            }
-                            
-                            postcontentlist.Add(pageposts);
+                            postcontentlist.Add(pagePost);
                             
                         }).ToArray();
+
                         await Task.WhenAll(tasks);
                     }
+
+          
+
 
                     return Ok(postcontentlist);
                 }
@@ -671,43 +688,98 @@ namespace Socxo_Smm_Backend.Controllers
 
         }
 
-        private async Task<string> GetUserProfile(HttpClient UserProfileClient, string userprofileurl)
-        {
-            var response = await UserProfileClient.GetAsync(userprofileurl);
-            var cnt = await response.Content.ReadAsStringAsync();
-
-            if (response.IsSuccessStatusCode)
-            {
-                using (JsonDocument doc = JsonDocument.Parse(cnt))
-                {
-                    JsonElement root = doc.RootElement;
-                    return root.GetProperty("localizedFirstName").GetString();
-                }
-            }
-            else
-            {
-                throw new Exception($"Failed to get the post image: {cnt}");
-            }
-        }
+        // private async Task<string> GetUserProfile(HttpClient UserProfileClient, string userprofileurl)
+        // {
+        //     var response = await UserProfileClient.GetAsync(userprofileurl);
+        //     var cnt = await response.Content.ReadAsStringAsync();
+        //
+        //     if (response.IsSuccessStatusCode)
+        //     {
+        //         using (JsonDocument doc = JsonDocument.Parse(cnt))
+        //         {
+        //             JsonElement root = doc.RootElement;
+        //             return root.GetProperty("localizedFirstName").GetString();
+        //         }
+        //     }
+        //     else
+        //     {
+        //         throw new Exception($"Failed to get the post image: {cnt}");
+        //     }
+        // }
 
     
 
-        private async Task<string> GetPostImageUrl(HttpClient imgclient, string imgurl)
+        private async Task<string> GetPostImageUrl(HttpClient MainClient, string imgurl)
         {
-            var response = await imgclient.GetAsync(imgurl);
+
+
+            var response = await MainClient.GetAsync(imgurl);
             var content = await response.Content.ReadAsStringAsync();
-            if (response.IsSuccessStatusCode)
-            {
-                using (JsonDocument doc = JsonDocument.Parse(content))
-                {
-                    JsonElement root = doc.RootElement;
-                    return root.GetProperty("downloadUrl").GetString();
-                }
-            }
-            else
+            if (!response.IsSuccessStatusCode)
             {
                 throw new Exception($"Failed to get the post image: {content}");
             }
+
+            using var doc = JsonDocument.Parse(content);
+            return doc.RootElement.GetProperty("downloadUrl").GetString();
+            
+        }
+
+
+        [HttpPost("GetLikesCommentCount")]
+        public async Task<ActionResult<PostanalyticsModel>> GetAllLikesComments([FromBody] PostanalyticsrequestModel postreqmodel)
+        {
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", postreqmodel.Token);
+            client.DefaultRequestHeaders.Add("LinkedIn-Version","202405");
+            
+            string urn = postreqmodel.ShareId;
+            string[] parts = urn.Split(':');
+            string urnid = parts[^1];
+            
+            var api = $"https://api.linkedin.com/rest/socialActions/urn%3Ali%3Ashare%3A{urnid}";
+
+            try
+            {
+                var requestEnpoint = await client.GetAsync(api);
+                var responseEndpoint = await requestEnpoint.Content.ReadAsStringAsync();
+
+                if (requestEnpoint.IsSuccessStatusCode)
+                {
+                    var totallikescount = "";
+                    var totalcommentscount = "";
+                    using (JsonDocument doc = JsonDocument.Parse(responseEndpoint))
+                    {
+                        JsonElement root = doc.RootElement;
+                        JsonElement likesSummary = root.GetProperty("likesSummary").GetProperty("totalLikes");
+                        var totallikes = likesSummary.ToString();
+                        totallikescount = totallikes;
+                        JsonElement CommentSummary =
+                            root.GetProperty("commentsSummary").GetProperty("aggregatedTotalComments");
+                        var totalcomments = CommentSummary.ToString();
+                        totalcommentscount = totalcomments;
+                    }
+
+                    PostanalyticsModel postanalytics = new PostanalyticsModel()
+                    {
+                        TotalLikes = totallikescount,
+                        TotalComments = totalcommentscount
+                    };
+
+                    return Ok(postanalytics);
+                }
+                else
+                {
+                    return StatusCode((int)requestEnpoint.StatusCode, $"Something went wrong: {responseEndpoint}");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500,$"Internal Server Error: {ex.Message}");
+            }
+
+            
         }
         
         

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Socxo_Smm_Backend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+24b2f12b237eabf3ae526b6d32b039d4db455bf5")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+677abbbc38941567dc85adfb01ff48b573ae67ce")]
 [assembly: System.Reflection.AssemblyProductAttribute("Socxo_Smm_Backend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Socxo_Smm_Backend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
