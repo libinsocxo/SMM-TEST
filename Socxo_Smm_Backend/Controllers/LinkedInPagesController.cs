@@ -620,7 +620,6 @@ namespace Socxo_Smm_Backend.Controllers
                             {
                                 var imgurl = $"https://api.linkedin.com/rest/images/{imageurn}";
                                 var imageUrl = GetPostImageUrl(MainClient, imgurl);
-                               
                             }
 
                             var userprofileclient = new HttpClient();
