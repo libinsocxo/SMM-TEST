@@ -22,6 +22,8 @@ namespace Socxo_Smm_Backend.Core.Model
         public string? accesstoken { get; set; }
 
         public string? base64img { get; set; }
+        
+        public string? PdfFile { get; set; }
 
     }
 }

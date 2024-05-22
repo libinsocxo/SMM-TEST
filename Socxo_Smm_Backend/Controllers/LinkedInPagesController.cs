@@ -781,6 +781,178 @@ namespace Socxo_Smm_Backend.Controllers
 
             
         }
+
+
+        [HttpPost("UploadDoctoLinkedin")]  
+        public async Task<ActionResult<string>> UploadDoc([FromBody] PostContent content)
+        {
+            var client = new HttpClient();
+
+            var postIds = new List<string>();
+            // var docuploadinfo = new List<DocInitializeUploadResponseBody>();
+            
+            client.DefaultRequestHeaders.Clear();
+            client.DefaultRequestHeaders.Add("X-Restli-Protocol-Version","2.0.0");
+            client.DefaultRequestHeaders.Add("LinkedIn-Version", "202405");
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", content.accesstoken);
+            
+            
+            byte[] docBytes;
+
+            try
+            {
+                docBytes = Convert.FromBase64String(content.PdfFile);
+            }
+            catch(Exception ex)
+            {
+                return BadRequest("Error in converting the doc file");
+            }
+
+            foreach (string orgid in content.Orgids)
+            {
+                var requestbody = new
+                {
+                    initializeUploadRequest = new
+                    {
+                        owner = orgid,
+                    }
+                };
+                
+                var jsonBody = Newtonsoft.Json.JsonConvert.SerializeObject(requestbody);
+                var request = new HttpRequestMessage(HttpMethod.Post, "https://api.linkedin.com/rest/documents?action=initializeUpload")
+                {
+                    Content = new StringContent(jsonBody, Encoding.UTF8, "application/json")
+                };
+
+                // initialize the doc upload 
+                try
+                {
+                    var req = await client.SendAsync(request);
+                    var responseString = await req.Content.ReadAsStringAsync();
+
+                    if (req.IsSuccessStatusCode)
+                    {
+                        var uploadResponse = JsonConvert.DeserializeObject<DocInitializeUploadResponse>(responseString);
+                        if (uploadResponse?.Value != null)
+                        {
+                            DocInitializeUploadResponseBody docuploadinfoobj = new DocInitializeUploadResponseBody()
+                            {
+                                uploadUrl = uploadResponse.Value.uploadUrl,
+                                document = uploadResponse.Value.document
+                            };
+                            var docCurlrequest = docCurlRequest(client, docBytes, docuploadinfoobj);
+
+                            var UploadDocTask = UploadDoc(client,docuploadinfoobj,orgid);
+
+                            await Task.WhenAll(docCurlrequest,UploadDocTask);
+                            
+                            postIds.Add(UploadDocTask.Result);
+
+
+                        }
+                    }
+                    else
+                    {
+                        return StatusCode((int)req.StatusCode, responseString);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500,
+                        $"Internal Server Error during initialization for orgid {orgid}: {ex.Message}");
+                }
+                
+                
+            }
+
+            return Ok(postIds);
+        }
+        
+        
+        private async Task docCurlRequest(HttpClient client,byte[] docbyte,DocInitializeUploadResponseBody docinitializebodyresponse)
+        {
+            using var docContent = new ByteArrayContent(docbyte)
+            {
+                Headers = { ContentType = new MediaTypeHeaderValue("mydoc/pdf") }
+            };
+
+            var curlrequest = new HttpRequestMessage(HttpMethod.Put, docinitializebodyresponse.uploadUrl)
+            {
+                Content = docContent
+            };
+
+            try
+            {
+                var request = await client.SendAsync(curlrequest);
+                var response = await request.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Something went wrong: {ex.Message}");
+            }
+
+
+        }
+
+        private async Task<string> UploadDoc(HttpClient client,DocInitializeUploadResponseBody Docuploadinfo,string orgid)
+        {
+            string postid = "";
+            var postRequestBody = new
+            {
+                author = orgid,
+                commentary = "testing",
+                visibility = "PUBLIC",
+                distribution = new
+                {
+                    feedDistribution = "MAIN_FEED",
+                    targetEntities = new object[] { },
+                    thirdPartyDistributionChannels = new object[] { }
+                },
+                content = new
+                {
+                    media = new
+                    {
+                        title = "test pdf",
+                        id = Docuploadinfo.document
+                    }
+                },
+                lifecycleState = "PUBLISHED",
+                isReshareDisabledByAuthor = false
+            };
+            
+            var postJsonBody = Newtonsoft.Json.JsonConvert.SerializeObject(postRequestBody);
+            var postRequest = new HttpRequestMessage(HttpMethod.Post, "https://api.linkedin.com/rest/posts")
+            {
+                Content = new StringContent(postJsonBody, Encoding.UTF8, "application/json")
+            };
+            try
+            {
+                var postResponse = await client.SendAsync(postRequest);
+                if (postResponse.IsSuccessStatusCode && postResponse.StatusCode == System.Net.HttpStatusCode.Created)
+                {
+                    if (postResponse.Headers.TryGetValues("x-restli-id", out var headerValues))
+                    {
+                        var postId = headerValues.FirstOrDefault();
+                        if (postId != null)
+                        {
+                            postid = postId;
+                        }
+                    }
+                }
+                else
+                {
+                    var responseMessage = await postResponse.Content.ReadAsStringAsync();
+                    return ($"Some Error occured: {responseMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                return "Internal Server Error";
+            }
+
+            return postid;
+
+        }
         
         
 
