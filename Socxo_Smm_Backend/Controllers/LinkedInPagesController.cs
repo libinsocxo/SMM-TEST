@@ -803,12 +803,16 @@ namespace Socxo_Smm_Backend.Controllers
             {
                 docBytes = Convert.FromBase64String(content.PdfFile);
             }
-            catch(Exception ex)
+            catch(FormatException)
             {
-                return BadRequest("Error in converting the doc file");
+                return BadRequest("Error in converting the doc file: Invalid Base64 string.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal Server Error: {ex.Message}");
             }
 
-            foreach (string orgid in content.Orgids)
+            foreach (var orgid in content.Orgids)
             {
                 var requestbody = new
                 {
@@ -835,18 +839,14 @@ namespace Socxo_Smm_Backend.Controllers
                         var uploadResponse = JsonConvert.DeserializeObject<DocInitializeUploadResponse>(responseString);
                         if (uploadResponse?.Value != null)
                         {
-                            DocInitializeUploadResponseBody docuploadinfoobj = new DocInitializeUploadResponseBody()
-                            {
-                                uploadUrl = uploadResponse.Value.uploadUrl,
-                                document = uploadResponse.Value.document
-                            };
-                            var docCurlrequest = docCurlRequest(client, docBytes, docuploadinfoobj);
+                            var docUploadInfo = uploadResponse.Value;
+                            var docCurlrequestTask = DocCurlRequest(client, docBytes, docUploadInfo);
 
-                            var UploadDocTask = UploadDoc(client,docuploadinfoobj,orgid);
+                            var uploadDocTask = UploadDoc(client,docUploadInfo,orgid,content);
 
-                            await Task.WhenAll(docCurlrequest,UploadDocTask);
+                            await Task.WhenAll(docCurlrequestTask,uploadDocTask);
                             
-                            postIds.Add(UploadDocTask.Result);
+                            postIds.Add(uploadDocTask.Result);
 
 
                         }
@@ -869,12 +869,10 @@ namespace Socxo_Smm_Backend.Controllers
         }
         
         
-        private async Task docCurlRequest(HttpClient client,byte[] docbyte,DocInitializeUploadResponseBody docinitializebodyresponse)
+        private static async Task DocCurlRequest(HttpClient client,byte[] docbyte,DocInitializeUploadResponseBody docinitializebodyresponse)
         {
-            using var docContent = new ByteArrayContent(docbyte)
-            {
-                Headers = { ContentType = new MediaTypeHeaderValue("mydoc/pdf") }
-            };
+            using var docContent = new ByteArrayContent(docbyte);
+            docContent.Headers.ContentType = new MediaTypeHeaderValue("mydoc/pdf");
 
             var curlrequest = new HttpRequestMessage(HttpMethod.Put, docinitializebodyresponse.uploadUrl)
             {
@@ -884,7 +882,7 @@ namespace Socxo_Smm_Backend.Controllers
             try
             {
                 var request = await client.SendAsync(curlrequest);
-                var response = await request.Content.ReadAsStringAsync();
+                request.EnsureSuccessStatusCode();
             }
             catch (Exception ex)
             {
@@ -894,26 +892,26 @@ namespace Socxo_Smm_Backend.Controllers
 
         }
 
-        private async Task<string> UploadDoc(HttpClient client,DocInitializeUploadResponseBody Docuploadinfo,string orgid)
+        private static async Task<string> UploadDoc(HttpClient client,DocInitializeUploadResponseBody docuploadinfo,string orgid,PostContent ctn)
         {
-            string postid = "";
+
             var postRequestBody = new
             {
                 author = orgid,
-                commentary = "testing",
+                commentary = ctn.textcontent,
                 visibility = "PUBLIC",
                 distribution = new
                 {
                     feedDistribution = "MAIN_FEED",
-                    targetEntities = new object[] { },
-                    thirdPartyDistributionChannels = new object[] { }
+                    targetEntities = Array.Empty<object>(),
+                    thirdPartyDistributionChannels = Array.Empty<object>()
                 },
                 content = new
                 {
                     media = new
                     {
-                        title = "test pdf",
-                        id = Docuploadinfo.document
+                        title = ctn.DocTitle,
+                        id = docuploadinfo.document
                     }
                 },
                 lifecycleState = "PUBLISHED",
@@ -928,29 +926,39 @@ namespace Socxo_Smm_Backend.Controllers
             try
             {
                 var postResponse = await client.SendAsync(postRequest);
-                if (postResponse.IsSuccessStatusCode && postResponse.StatusCode == System.Net.HttpStatusCode.Created)
+                var responseMessage = await postResponse.Content.ReadAsStringAsync();
+                //
+                // if (postResponse.IsSuccessStatusCode && postResponse.StatusCode == System.Net.HttpStatusCode.Created)
+                // {
+                //     if (postResponse.Headers.TryGetValues("x-restli-id", out var headerValues))
+                //     {
+                //         var postId = headerValues.FirstOrDefault();
+                //         return postId?? $"Post created but unable to retrieve ID: {responseMessage}";
+                //     }
+                // }
+                // return $"Some Error occurred: {responseMessage}";
+                
+                // ABOVE IF STATEMENT INVERTED 
+                
+                if (!postResponse.IsSuccessStatusCode || postResponse.StatusCode != System.Net.HttpStatusCode.Created)
                 {
-                    if (postResponse.Headers.TryGetValues("x-restli-id", out var headerValues))
-                    {
-                        var postId = headerValues.FirstOrDefault();
-                        if (postId != null)
-                        {
-                            postid = postId;
-                        }
-                    }
+                    return $"Some Error occurred: {responseMessage}";
                 }
-                else
+
+                if (!postResponse.Headers.TryGetValues("x-restli-id", out var headerValues))
                 {
-                    var responseMessage = await postResponse.Content.ReadAsStringAsync();
-                    return ($"Some Error occured: {responseMessage}");
+                    return $"Post created but unable to retrieve ID: {responseMessage}";
                 }
+
+                var postId = headerValues.FirstOrDefault();
+                return postId ?? $"Post created but unable to retrieve ID: {responseMessage}";
             }
             catch (Exception ex)
             {
-                return "Internal Server Error";
+
+                return ($"Internal Server Error: {ex.Message}");
             }
 
-            return postid;
 
         }
         
